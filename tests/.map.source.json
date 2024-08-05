@@ -1,0 +1,12 @@
+{
+  "sources": [
+    {
+      "sourceNumber": 0,
+      "SourcePatch": "/путь до источника от корня"
+    },
+    {
+      "sourceNumber": 0,
+      "SourcePatch": "/путь до источника от корня"
+    }
+  ]
+}
