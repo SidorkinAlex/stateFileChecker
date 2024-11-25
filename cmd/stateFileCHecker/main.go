@@ -12,10 +12,14 @@ func main() {
 	Args := CliApgParser.GetArgs()
 	successCHeck, fileDiff := CourceAnalyser.CheckHashes(Args)
 	if successCHeck {
-		exec.Command("/bin/sh", "-c", Args.SuccessCommand).Output()
+		if len(Args.SuccessCommand) > 0 {
+			exec.Command("/bin/sh", "-c", Args.SuccessCommand).Output()
+		}
 		log.Println(CliTextColor.SetGreenColor("the consistency of the directory has been successfully checked " + Args.Sources))
 	}
-	exec.Command("/bin/sh", "-c", Args.FailedCommand).Output()
+	if len(Args.FailedCommand) > 0 {
+		exec.Command("/bin/sh", "-c", Args.FailedCommand).Output()
+	}
 	log.Fatal("\n" + fileDiff)
 
 }
