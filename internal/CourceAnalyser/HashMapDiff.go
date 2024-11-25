@@ -18,19 +18,19 @@ func NewHashMapDiff(changedFile []string, newFile []string, deletedFile []string
 func (h *HashMapDiff) LogString() string {
 	logString := ""
 	if len(h.newFile) > 0 {
-		logString = CliTextColor.SetGreenColor("Add new File:\n")
+		logString += CliTextColor.SetGreenColor("Add new File:\n")
 		for _, filePath := range h.newFile {
 			logString += CliTextColor.SetGreenColor(filePath)
 		}
 	}
 	if len(h.changedFile) > 0 {
-		logString = CliTextColor.SetYellowColor("ChangedFile File:\n")
+		logString += CliTextColor.SetYellowColor("ChangedFile File:\n")
 		for _, filePath := range h.changedFile {
 			logString += CliTextColor.SetYellowColor(filePath)
 		}
 	}
 	if len(h.deletedFile) > 0 {
-		logString = CliTextColor.SetRedColor("Deleted File:\n")
+		logString += CliTextColor.SetRedColor("Deleted File:\n")
 		for _, filePath := range h.deletedFile {
 			logString += CliTextColor.SetRedColor(filePath)
 		}

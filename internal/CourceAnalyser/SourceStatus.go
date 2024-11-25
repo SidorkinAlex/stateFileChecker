@@ -20,17 +20,14 @@ const analyseFileSource = ".result.lock"
 const manifestFile = "manifest.json"
 
 func CheckHashes(parser CliApgParser.CliParser) (bool, string) {
-	// Чтение файла с хешами
+	// Read ignore file
 	root := parser.Sources
-	ignoreFile := root + "/" + fileNameIgnore
-	ignoreData, err := os.ReadFile(ignoreFile)
-	if err != nil {
-		return false, err.Error()
-	}
-	var arrIgnore []string
-	arrIgnore = strings.Split(string(ignoreData), "\n")
-	arrIgnore = filterEmptyStrings(arrIgnore)
-	hashFile, err := os.Open(root + "/" + directoryFilesChecker + "/" + analyseFileSource)
+
+	arrIgnore := createIgnoreDirList(root)
+
+	// Open hash file
+	hashFilePath := filepath.Join(root, directoryFilesChecker, analyseFileSource)
+	hashFile, err := os.Open(hashFilePath)
 	if err != nil {
 		return false, CliTextColor.SetRedColor("Ошибка при открытии файла: " + err.Error() + "\n")
 	}
@@ -41,32 +38,33 @@ func CheckHashes(parser CliApgParser.CliParser) (bool, string) {
 	if err != nil {
 		return false, CliTextColor.SetRedColor("Ошибка при чтении файла: " + err.Error() + "\n")
 	}
-	manifest := ManifestReader.ManifestRead(root + "/" + manifestFile)
+
+	manifest := ManifestReader.ManifestRead(filepath.Join(root, manifestFile))
 	if manifest.Version == "" {
 		return false, "manifest has empty version"
 	}
-	// Создание карты хешей из файла
-	hashMap := make(map[string]string)
 
+	// Create hash map from file
+	hashMap := make(map[string]string, len(records))
 	for _, record := range records {
 		if len(record) == 2 {
-			if !fileExists(root + "/" + Encoder.DecodeFromKey(record[0], manifest.Version)) {
-				return false, CliTextColor.SetRedColor("error checking application state in dir " + root)
-			}
-			hashMap[Encoder.DecodeFromKey(record[0], manifest.Version)] = Encoder.DecodeFromKey(record[1], manifest.Version)
+			decodedKey := Encoder.DecodeFromKey(record[0], manifest.Version)
+			hashMap[decodedKey] = Encoder.DecodeFromKey(record[1], manifest.Version)
 		}
 	}
+
 	newHashMap := make(map[string]string)
 	var fileDiff HashMapDiff
-	// Проверка хешей файлов
+
+	// Walk through files and check hashes
 	err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		// Проверка игнорируемых файлов
+		// Skip ignored files
 		for _, value := range arrIgnore {
-			if strings.Contains(path, value) {
+			if strings.Contains(path, root+"/"+value) {
 				return nil
 			}
 		}
@@ -84,59 +82,70 @@ func CheckHashes(parser CliApgParser.CliParser) (bool, string) {
 			}
 			hash := fmt.Sprintf("%x", h.Sum(nil))
 
-			// Получение относительного пути от сканируемой директории
+			// Get relative path
 			relPath, err := filepath.Rel(root, path)
 			if err != nil {
 				return err
 			}
 			newHashMap[relPath] = hash
 		}
-		fileDiff = FileMapDiff(hashMap, newHashMap)
 		return nil
 	})
 
+	if err != nil {
+		return false, CliTextColor.SetRedColor("Ошибка при обходе файлов: " + err.Error() + "\n")
+	}
+
+	fileDiff = FileMapDiff(hashMap, newHashMap)
 	return !fileDiff.HasDiff(), fileDiff.LogString()
 }
 
-func FileMapDiff(oldHashMap map[string]string, newHashMap map[string]string) HashMapDiff {
-
+func FileMapDiff(oldHashMap, newHashMap map[string]string) HashMapDiff {
 	missingFiles := []string{}
 	newFiles := []string{}
 	changedFiles := []string{}
 
 	for key, oldHash := range oldHashMap {
-		newHash, exists := newHashMap[key]
-		if !exists {
-			// The file is missing in the new hashmap
+		if newHash, exists := newHashMap[key]; !exists {
 			missingFiles = append(missingFiles, key)
 		} else if oldHash != newHash {
-			// The file has changed
 			changedFiles = append(changedFiles, key)
 		}
 	}
 
-	// Checking for new files
 	for key := range newHashMap {
 		if _, exists := oldHashMap[key]; !exists {
 			newFiles = append(newFiles, key)
 		}
 	}
+
 	return NewHashMapDiff(changedFiles, newFiles, missingFiles)
 }
 
 func filterEmptyStrings(arr []string) []string {
-	filtered := make([]string, 0)
-
+	filtered := make([]string, 0, len(arr))
 	for _, str := range arr {
 		if str != "" {
 			filtered = append(filtered, str)
 		}
 	}
-
 	return filtered
 }
 
 func fileExists(filename string) bool {
 	_, err := os.Stat(filename)
 	return err == nil
+}
+
+func createIgnoreDirList(rootPath string) []string {
+	var arrIgnore []string
+
+	ignoreFile := rootPath + "/" + fileNameIgnore
+	ignoreData, err := os.ReadFile(ignoreFile)
+	if err != nil {
+		fmt.Println(err)
+	}
+	arrIgnore = filterEmptyStrings(strings.Split(string(ignoreData), "\n"))
+	arrIgnore = append(arrIgnore, directoryFilesChecker)
+	return filterEmptyStrings(arrIgnore)
 }

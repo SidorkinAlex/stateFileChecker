@@ -13,5 +13,5 @@ func main() {
 	if successCHeck {
 		log.Println(CliTextColor.SetGreenColor("the consistency of the directory has been successfully checked " + Args.Sources))
 	}
-	log.Fatal(fileDiff)
+	log.Fatal("\n" + fileDiff)
 }
