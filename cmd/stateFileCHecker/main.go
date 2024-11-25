@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/SidorkinAlex/stateFileChecker/internal/CliApgParser"
 	"github.com/SidorkinAlex/stateFileChecker/internal/CliTextColor"
 	"github.com/SidorkinAlex/stateFileChecker/internal/CourceAnalyser"
@@ -10,10 +9,9 @@ import (
 
 func main() {
 	Args := CliApgParser.GetArgs()
-	if Args.Action == "init" {
-		CourceAnalyser.CheckHashes(Args)
+	successCHeck, fileDiff := CourceAnalyser.CheckHashes(Args)
+	if successCHeck {
+		log.Println(CliTextColor.SetGreenColor("the consistency of the directory has been successfully checked " + Args.Sources))
 	}
-	log.Println(CliTextColor.SetGreenColor("success checking state app in dir " + Args.Sources))
-	fmt.Println("\n")
-	fmt.Println("\n")
+	log.Fatal(fileDiff)
 }

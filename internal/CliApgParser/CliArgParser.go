@@ -5,9 +5,10 @@ import (
 )
 
 type CliParser struct {
-	Action    string
-	Sources   string
-	TargetDir string
+	Sources        string
+	TargetDir      string
+	SuccessCommand string
+	FailedCommand  string
 }
 
 //type Source struct {
@@ -16,18 +17,12 @@ type CliParser struct {
 //}
 
 func GetArgs() CliParser {
-	var init bool
-	var sources string
-	var action string
-	flag.StringVar(&sources, "s", "", "Sources parameter")
-	flag.BoolVar(&init, "i", false, "set this param from initialize project")
+
+	CliParserCar := CliParser{}
+	flag.StringVar(&CliParserCar.Sources, "s", "", "Sources parameter")
+	flag.StringVar(&CliParserCar.SuccessCommand, "success--run", "", "command to exec if success checking")
+	flag.StringVar(&CliParserCar.FailedCommand, "failed--run", "", "command to exec if failed checking")
 	flag.Parse()
-	if init {
-		action = "init"
-	}
-	CliParserCar := CliParser{
-		Action:  action,
-		Sources: sources,
-	}
+
 	return CliParserCar
 }
